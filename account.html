@@ -1,1 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Account - Gonah Homes</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="customer-dashboard.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .login-page {
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, rgba(128,0,0,0.05) 0%, rgba(255,214,0,0.05) 100%);
+        }
+        .login-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 440px;
+        }
+        .login-card .login-logo {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .login-card .login-logo h2 {
+            color: var(--primary-color, #800000);
+            font-size: 1.8rem;
+        }
+        .login-card .login-logo p {
+            color: #666;
+            font-size: 0.95rem;
+            margin-top: 0.3rem;
+        }
+        .login-card .form-group {
+            margin-bottom: 1.2rem;
+        }
+        .login-card .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+            color: #333;
+        }
+        .login-card .form-group input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1.5px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        .login-card .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color, #800000);
+        }
+        .login-card .form-group small {
+            display: block;
+            color: #888;
+            font-size: 0.8rem;
+            margin-top: 0.3rem;
+        }
+        .login-card .btn-full {
+            width: 100%;
+            padding: 0.85rem;
+            font-size: 1rem;
+            margin-top: 0.5rem;
+        }
+        .login-notice {
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: #856404;
+            text-align: center;
+        }
+        #login-error {
+            background: #ffebee;
+            border: 1px solid #f44336;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: #c62828;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        #login-loading {
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header class="main-header">
+        <nav class="navbar">
+            <div class="nav-container">
+                <div class="nav-logo">
+                    <a href="index.html" style="text-decoration:none;"><h2 style="color:var(--primary-color,#800000)">Gonah Homes</h2></a>
+                </div>
+                <div class="nav-menu">
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="index.html#accommodations" class="nav-link">Accommodations</a>
+                    <button id="auth-btn" class="btn btn-primary" style="display:none;">Logout</button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Login Section (shown when not logged in) -->
+    <div id="login-section" class="login-page">
+        <div class="login-card">
+            <div class="login-logo">
+                <h2><i class="fas fa-home"></i> My Account</h2>
+                <p>Enter your booking details to access your dashboard</p>
+            </div>
+            <div id="login-error"></div>
+            <form id="auth-form">
+                <div class="form-group">
+                    <label for="auth-email"><i class="fas fa-envelope"></i> Email Address</label>
+                    <input type="email" id="auth-email" placeholder="Enter your booking email" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="auth-booking-id"><i class="fas fa-hashtag"></i> Booking ID</label>
+                    <input type="text" id="auth-booking-id" placeholder="e.g. GNH-ABCD12" required autocomplete="off">
+                    <small>Found in your booking confirmation message</small>
+                </div>
+                <button type="submit" id="auth-submit" class="btn btn-primary btn-full">
+                    <i class="fas fa-sign-in-alt"></i> Access My Booking
+                </button>
+                <div id="login-loading"><i class="fas fa-spinner fa-spin"></i> Verifying...</div>
+            </form>
+            <div class="login-notice">
+                <i class="fas fa-info-circle"></i>
+                No registration needed. Your account is created automatically when you make a booking.
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard (shown when logged in) -->
+    <main class="dashboard-container" id="dashboard-content" style="display:none;">
+        <section class="profile-section">
+            <div class="profile-pic-container">
+                <img id="profile-pic" src="" alt="Profile">
+            </div>
+            <h2 id="user-name-display">Welcome</h2>
+            <p id="user-email-display"></p>
+        </section>
+
+        <nav class="dashboard-tabs">
+            <div class="account-nav-tab active" onclick="switchTab('bookings', this)">
+                <i class="fas fa-calendar-check"></i> My Bookings
+            </div>
+            <div class="account-nav-tab" onclick="switchTab('documents', this)">
+                <i class="fas fa-id-card"></i> ID Documents
+            </div>
+            <div class="account-nav-tab" onclick="switchTab('requests', this)">
+                <i class="fas fa-concierge-bell"></i> Service Requests
+            </div>
+        </nav>
+
+        <div id="bookings-tab" class="tab-content">
+            <div id="active-bookings" class="mb-2"></div>
+            <div id="past-bookings" class="mb-2"></div>
+        </div>
+
+        <div id="documents-tab" class="tab-content" style="display:none;">
+            <h3>Upload Identification</h3>
+            <p>Please upload a copy of your ID or Passport for verification.</p>
+            <input type="file" id="id-upload" accept="image/*,.pdf">
+            <button id="upload-id-btn" class="btn btn-primary" style="margin-top:0.5rem;">
+                <i class="fas fa-upload"></i> Upload Document
+            </button>
+            <div id="uploaded-docs" style="margin-top:1rem;"></div>
+        </div>
+
+        <div id="requests-tab" class="tab-content" style="display:none;">
+            <h3>Service Requests</h3>
+            <form id="service-request-form">
+                <div class="form-group" style="margin-bottom:1rem;">
+                    <label>Request Type</label>
+                    <select id="request-type" required style="width:100%;padding:0.75rem;border:1.5px solid #ddd;border-radius:8px;font-size:1rem;">
+                        <option value="housekeeping">Housekeeping</option>
+                        <option value="room-service">Room Service</option>
+                        <option value="maintenance">Maintenance</option>
+                        <option value="early-checkin">Early Check-in Request</option>
+                        <option value="late-checkout">Late Check-out Request</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom:1rem;">
+                    <label>Details</label>
+                    <textarea id="request-details" placeholder="Enter details (e.g. preferred time)..." 
+                        style="width:100%;padding:0.75rem;border:1.5px solid #ddd;border-radius:8px;font-size:1rem;min-height:100px;box-sizing:border-box;"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Submit Request
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+    <!-- PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script>
+        // Firebase init
+        const firebaseConfig = {
+            apiKey: "AIzaSyABTVp797tNu353FBVLzsOp90aIX2mNF74",
+            authDomain: "my-website-project2797.firebaseapp.com",
+            projectId: "my-website-project2797",
+            storageBucket: "my-website-project2797.appspot.com",
+            messagingSenderId: "406226552922",
+            appId: "1:406226552922:web:ffdf2ccf6f77a57964b063"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        const storage = firebase.storage();
+
+        // ---- Login Flow ----
+        const loginSection = document.getElementById('login-section');
+        const dashboardContent = document.getElementById('dashboard-content');
+        const authForm = document.getElementById('auth-form');
+        const loginError = document.getElementById('login-error');
+        const loginLoading = document.getElementById('login-loading');
+        const authBtn = document.getElementById('auth-btn');
+
+        function showLogin() {
+            loginSection.style.display = 'flex';
+            dashboardContent.style.display = 'none';
+            authBtn.style.display = 'none';
+        }
+
+        function showDashboard(user) {
+            loginSection.style.display = 'none';
+            dashboardContent.style.display = 'block';
+            authBtn.style.display = 'inline-block';
+            authBtn.textContent = 'Logout';
+            authBtn.onclick = () => {
+                localStorage.removeItem('booking_code_user');
+                auth.signOut().finally(() => { window.location.href = 'index.html'; });
+            };
+            document.getElementById('user-name-display').textContent = 'Welcome, ' + user.name;
+            document.getElementById('user-email-display').textContent = user.email;
+            const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&size=100&background=800000&color=fff`;
+            document.getElementById('profile-pic').src = avatar;
+            loadBookings(user);
+        }
+
+        // Check localStorage immediately (no async needed)
+        const saved = JSON.parse(localStorage.getItem('booking_code_user') || 'null');
+        if (saved) {
+            showDashboard(saved);
+        } else {
+            showLogin();
+        }
+
+        // Login form submission
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value.trim();
+            const bookingId = document.getElementById('auth-booking-id').value.trim().toUpperCase();
+            loginError.style.display = 'none';
+            loginLoading.style.display = 'block';
+            authForm.querySelector('button[type="submit"]').disabled = true;
+
+            try {
+                const snap = await db.collection('bookings')
+                    .where('email', '==', email)
+                    .where('id', '==', bookingId)
+                    .get();
+                if (snap.empty) throw new Error('No booking found with that email and Booking ID. Please check and try again.');
+                const b = snap.docs[0].data();
+                const user = { name: b.name || email.split('@')[0], email: b.email, code: bookingId };
+                localStorage.setItem('booking_code_user', JSON.stringify(user));
+                showDashboard(user);
+            } catch (err) {
+                loginError.textContent = err.message;
+                loginError.style.display = 'block';
+            } finally {
+                loginLoading.style.display = 'none';
+                authForm.querySelector('button[type="submit"]').disabled = false;
+            }
+        });
+
+        // ---- Dashboard Logic ----
+        function switchTab(tabName, el) {
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+            document.querySelectorAll('.account-nav-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabName + '-tab').style.display = 'block';
+            if (el) el.classList.add('active');
+        }
+
+        async function loadBookings(user) {
+            const activeDiv = document.getElementById('active-bookings');
+            const pastDiv = document.getElementById('past-bookings');
+            activeDiv.innerHTML = '<h3><i class="fas fa-calendar-check"></i> Upcoming Bookings</h3>';
+            pastDiv.innerHTML = '<h3><i class="fas fa-history"></i> Past Bookings</h3>';
+
+            try {
+                const snap = await db.collection('bookings').where('email', '==', user.email).get();
+                if (snap.empty) {
+                    activeDiv.innerHTML += '<p style="color:#666;">No bookings found.</p>';
+                    return;
+                }
+                let hasActive = false, hasPast = false;
+                snap.forEach(doc => {
+                    const b = doc.data();
+                    const card = createBookingCard(b, doc.id);
+                    const checkin = new Date(b.checkin);
+                    if (checkin >= new Date()) {
+                        activeDiv.appendChild(card);
+                        startCountdown(b.checkin, doc.id);
+                        hasActive = true;
+                    } else {
+                        pastDiv.appendChild(card);
+                        hasPast = true;
+                    }
+                });
+                if (!hasActive) activeDiv.innerHTML += '<p style="color:#666;">No upcoming bookings.</p>';
+                if (!hasPast) pastDiv.innerHTML += '<p style="color:#666;">No past bookings.</p>';
+            } catch (err) {
+                activeDiv.innerHTML += `<p style="color:red;">Error loading bookings: ${err.message}</p>`;
+            }
+        }
+
+        function createBookingCard(booking, id) {
+            const card = document.createElement('div');
+            card.className = 'booking-card';
+            const statusColor = { confirmed: '#2e7d32', pending: '#e65100', cancelled: '#c62828' }[booking.status] || '#555';
+            card.innerHTML = `
+                <div class="booking-header">
+                    <h4><i class="fas fa-home"></i> ${booking.house || 'N/A'}</h4>
+                    <span class="status-badge" style="background:${statusColor};color:#fff;padding:3px 10px;border-radius:20px;font-size:0.8rem;">
+                        ${(booking.status || 'pending').toUpperCase()}
+                    </span>
+                </div>
+                <p><i class="fas fa-sign-in-alt"></i> Check-in: <strong>${booking.checkin || 'N/A'}</strong></p>
+                <p><i class="fas fa-sign-out-alt"></i> Check-out: <strong>${booking.checkout || 'N/A'}</strong></p>
+                <p><i class="fas fa-tag"></i> Booking ID: <strong>${id}</strong></p>
+                <div id="countdown-${id}" class="countdown-timer" style="font-size:0.85rem;color:var(--primary-color,#800000);margin:0.5rem 0;"></div>
+                <div class="booking-actions" style="margin-top:0.75rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+                    <button onclick="downloadReceipt('${id}', ${JSON.stringify(booking).replace(/"/g, '&quot;')})" class="btn btn-outline btn-sm">
+                        <i class="fas fa-download"></i> Receipt
+                    </button>
+                    ${booking.status !== 'cancelled' ? `<button onclick="cancelBooking('${id}')" class="btn btn-sm" style="background:#c62828;color:#fff;border:none;">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>` : ''}
+                </div>
+            `;
+            return card;
+        }
+
+        function startCountdown(checkinDate, id) {
+            const el = document.getElementById('countdown-' + id);
+            if (!el) return;
+            const target = new Date(checkinDate).getTime();
+            function update() {
+                const diff = target - Date.now();
+                if (diff < 0) { el.innerHTML = "<i class='fas fa-key'></i> Check-in day!"; return; }
+                const d = Math.floor(diff / 86400000);
+                const h = Math.floor((diff % 86400000) / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                el.innerHTML = `<i class='fas fa-clock'></i> Check-in in: ${d}d ${h}h ${m}m`;
+            }
+            update();
+            setInterval(update, 60000);
+        }
+
+        async function cancelBooking(id) {
+            if (!confirm('Are you sure you want to cancel this booking?')) return;
+            try {
+                await db.collection('bookings').doc(id).update({ status: 'cancelled' });
+                const user = JSON.parse(localStorage.getItem('booking_code_user'));
+                loadBookings(user);
+            } catch (err) { alert('Error: ' + err.message); }
+        }
+
+        function downloadReceipt(id, booking) {
+            if (window.jspdf) {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.setFontSize(18);
+                doc.text("Gonah Homes - Booking Receipt", 20, 20);
+                doc.setFontSize(12);
+                doc.text(`Booking ID: ${id}`, 20, 40);
+                doc.text(`Property: ${booking.house || 'N/A'}`, 20, 50);
+                doc.text(`Guest: ${booking.name || 'N/A'}`, 20, 60);
+                doc.text(`Check-in: ${booking.checkin || 'N/A'}`, 20, 70);
+                doc.text(`Check-out: ${booking.checkout || 'N/A'}`, 20, 80);
+                doc.text(`Status: ${booking.status || 'N/A'}`, 20, 90);
+                doc.save(`receipt-${id}.pdf`);
+            } else {
+                alert(`Booking ID: ${id}\nProperty: ${booking.house}\nCheck-in: ${booking.checkin}\nCheck-out: ${booking.checkout}`);
+            }
+        }
+
+        // Document Upload
+        document.getElementById('upload-id-btn').addEventListener('click', async () => {
+            const file = document.getElementById('id-upload').files[0];
+            if (!file) { alert('Please select a file first.'); return; }
+            const user = JSON.parse(localStorage.getItem('booking_code_user') || 'null');
+            if (!user) return;
+            try {
+                const ref = storage.ref(`documents/${user.code}/${Date.now()}_${file.name}`);
+                await ref.put(file);
+                const url = await ref.getDownloadURL();
+                await db.collection('users').doc('booking_' + user.code).collection('documents').add({
+                    name: file.name, url, uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert('Document uploaded successfully!');
+                document.getElementById('id-upload').value = '';
+            } catch (err) { alert('Upload error: ' + err.message); }
+        });
+
+        // Service Request
+        document.getElementById('service-request-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const user = JSON.parse(localStorage.getItem('booking_code_user') || 'null');
+            if (!user) return;
+            const type = document.getElementById('request-type').value;
+            const details = document.getElementById('request-details').value;
+            try {
+                await db.collection('service_requests').add({
+                    userId: 'booking_' + user.code,
+                    userEmail: user.email,
+                    type, details,
+                    status: 'pending',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert('Request submitted successfully!');
+                e.target.reset();
+            } catch (err) { alert('Error: ' + err.message); }
+        });
+    </script>
+</body>
+</html>
 
